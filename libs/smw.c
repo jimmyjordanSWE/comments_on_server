@@ -1,86 +1,80 @@
 #include "smw.h"
+#include <stdio.h>
 #include <string.h>
 
+// The global smw instance.
 smw g_smw;
 
-int smw_init()
-{
-	memset(&g_smw, 0, sizeof(g_smw));
-
-	int i;
-	for(i = 0; i < smw_max_tasks; i++)
-	{
-		g_smw.tasks[i].context = NULL;
-		g_smw.tasks[i].callback = NULL;
-	}
-
-	return 0;
+// Initializes the smw worker.
+int smw_init() {
+    memset(&g_smw, 0, sizeof(g_smw));
+    int i;
+    for (i = 0; i < smw_max_tasks; i++) {
+        g_smw.tasks[i].context = NULL;
+        g_smw.tasks[i].callback = NULL;
+    }
+    return 0;
 }
 
-smw_task* smw_createTask(void* _Context, void (*_Callback)(void* _Context, uint64_t _MonTime))
-{
-	int i;
-	for(i = 0; i < smw_max_tasks; i++)
-	{
-		if(g_smw.tasks[i].context == NULL && g_smw.tasks[i].callback == NULL)
-		{
-			g_smw.tasks[i].context = _Context;
-			g_smw.tasks[i].callback = _Callback;
-			return &g_smw.tasks[i];
-		}
-	}
+// Creates a new task.
+smw_task* smw_createTask(void* _Context, void (*_Callback)(void* _Context, uint64_t _MonTime)) {
+    int i;
+    // Find an empty slot in the task list.
+    for (i = 0; i < smw_max_tasks; i++) {
+        if (g_smw.tasks[i].context == NULL && g_smw.tasks[i].callback == NULL) {
+            g_smw.tasks[i].context = _Context;
+            g_smw.tasks[i].callback = _Callback;
+            printf("Task added at index %d\n", i);
 
-	return NULL;
+            return &g_smw.tasks[i];
+        }
+    }
+    return NULL;
 }
 
-void smw_destroyTask(smw_task* _Task)
-{
-	if(_Task == NULL)
-		return;
-
-	int i;
-	for(i = 0; i < smw_max_tasks; i++)
-	{
-		if(&g_smw.tasks[i] == _Task)
-		{
-			g_smw.tasks[i].context = NULL;
-			g_smw.tasks[i].callback = NULL;
-			break;
-		}
-	}
+// Destroys a task.
+void smw_destroyTask(smw_task* _Task) {
+    if (_Task == NULL)
+        return;
+    int i;
+    for (i = 0; i < smw_max_tasks; i++) {
+        if (&g_smw.tasks[i] == _Task) {
+            g_smw.tasks[i].context = NULL;
+            g_smw.tasks[i].callback = NULL;
+            break;
+        }
+    }
 }
 
-void smw_work(uint64_t _MonTime)
-{
-	int i;
-	for(i = 0; i < smw_max_tasks; i++)
-	{
-		if(g_smw.tasks[i].callback != NULL)
-			g_smw.tasks[i].callback(g_smw.tasks[i].context, _MonTime);
-
-	}
+// Executes all tasks.
+void smw_work(uint64_t _MonTime) {
+    printf("Working Tasks: ");
+    int i;
+    for (i = 0; i < smw_max_tasks; i++) {
+        if (g_smw.tasks[i].callback != NULL) {
+            printf("T:%d ", i);
+            g_smw.tasks[i].callback(g_smw.tasks[i].context, _MonTime);
+        }
+    }
+    printf("\n");
 }
 
-int smw_getTaskCount()
-{
-	int counter = 0;
-	int i;
-	for(i = 0; i < smw_max_tasks; i++)
-	{
-		if(g_smw.tasks[i].callback != NULL)
-			counter++;
-
-	}
-
-	return counter;
+// Returns the number of active tasks.
+int smw_getTaskCount() {
+    int counter = 0;
+    int i;
+    for (i = 0; i < smw_max_tasks; i++) {
+        if (g_smw.tasks[i].callback != NULL)
+            counter++;
+    }
+    return counter;
 }
 
-void smw_dispose()
-{
-	int i;
-	for(i = 0; i < smw_max_tasks; i++)
-	{
-		g_smw.tasks[i].context = NULL;
-		g_smw.tasks[i].callback = NULL;
-	}
+// Disposes the smw worker.
+void smw_dispose() {
+    int i;
+    for (i = 0; i < smw_max_tasks; i++) {
+        g_smw.tasks[i].context = NULL;
+        g_smw.tasks[i].callback = NULL;
+    }
 }

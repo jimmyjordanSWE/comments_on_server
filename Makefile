@@ -2,7 +2,7 @@
 CC=gcc
 OPTIMIZE=-ffunction-sections -fdata-sections -O2 -flto -Wno-unused-result -fno-strict-aliasing
 DEBUG_FLAGS=-g -O0 -Wfatal-errors -Werror
-LIBS=-luuid -lcurl -pthread -lm -lbsd
+LIBS=# -luuid -lcurl -pthread -lm -lbsd
 INCLUDES = 
 
 #   -DWALLOCATOR_DEBUG -DWALLOCATOR_DEBUG_BORDERCHECK
@@ -45,7 +45,7 @@ all: $(EXECUTABLES)
 debug-server:
 	@$(MAKE) MODE=debug --no-print-directory clean server
 	@-rm -f WADEBUG.txt
-	gdb server -ex run
+#	gdb server -ex run # prefer to debug in vscode
 
 debug-client:
 	@$(MAKE) MODE=debug --no-print-directory clean client
