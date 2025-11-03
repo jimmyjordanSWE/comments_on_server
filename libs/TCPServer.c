@@ -2,11 +2,11 @@
 #include <stdlib.h>
 
 //-----------------Internal Functions-----------------
-void TCPServer_TaskWork(void* _Context, uint64_t _MonTime);
+void tcp_server_work(void* _Context, uint64_t _MonTime);
 //----------------------------------------------------
 
-int TCPServer_Initiate(TCPServer* _Server, const char* _Port, TCPServer_OnAccept _OnAccept, void* _Context) {
-    _Server->onAccept = _OnAccept;
+int tcp_server_init(tcp_server_t* _Server, const char* _Port, tcp_server_on_accept_cb _OnAccept, void* _Context) {
+    _Server->on_accept = _OnAccept;
     _Server->context = _Context;
 
     struct addrinfo hints = {0}, *res = NULL;
@@ -36,31 +36,31 @@ int TCPServer_Initiate(TCPServer* _Server, const char* _Port, TCPServer_OnAccept
     if (fd < 0)
         return -1;
 
-    if (listen(fd, MAX_CLIENTS) < 0) {
+    if (listen(fd, TCP_MAX_CLIENTS) < 0) {
         close(fd);
         return -1;
     }
 
     // Set the socket to non-blocking mode.
-    TCPServer_Nonblocking(fd);
+    tcp_server_set_nonblocking(fd);
 
     _Server->listen_fd = fd;
 
     // Create a task for the smw worker.
-    _Server->task = smw_createTask(_Server, TCPServer_TaskWork);
+    _Server->task = smw_create_task(_Server, tcp_server_work);
 
     return 0;
 }
 
-int TCPServer_InitiatePtr(const char* _Port, TCPServer_OnAccept _OnAccept, void* _Context, TCPServer** _ServerPtr) {
+int tcp_server_new(const char* _Port, tcp_server_on_accept_cb _OnAccept, void* _Context, tcp_server_t** _ServerPtr) {
     if (_ServerPtr == NULL)
         return -1;
 
-    TCPServer* _Server = (TCPServer*)malloc(sizeof(TCPServer));
+    tcp_server_t* _Server = (tcp_server_t*)malloc(sizeof(tcp_server_t));
     if (_Server == NULL)
         return -2;
 
-    int result = TCPServer_Initiate(_Server, _Port, _OnAccept, _Context);
+    int result = tcp_server_init(_Server, _Port, _OnAccept, _Context);
     if (result != 0) {
         free(_Server);
         return result;
@@ -71,8 +71,8 @@ int TCPServer_InitiatePtr(const char* _Port, TCPServer_OnAccept _OnAccept, void*
     return 0;
 }
 
-// This function accepts a new connection and calls the onAccept callback.
-int TCPServer_Accept(TCPServer* _Server) {
+// This function accepts a new connection and calls the on_accept callback.
+int tcp_server_accept(tcp_server_t* _Server) {
     int socket_fd = accept(_Server->listen_fd, NULL, NULL);
     if (socket_fd < 0) {
         if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -83,10 +83,10 @@ int TCPServer_Accept(TCPServer* _Server) {
     }
 
     // Set the new connection to non-blocking mode.
-    TCPServer_Nonblocking(socket_fd);
+    tcp_server_set_nonblocking(socket_fd);
 
-    // Call the onAccept callback to notify the user of the new connection.
-    int result = _Server->onAccept(socket_fd, _Server->context);
+    // Call the on_accept callback to notify the user of the new connection.
+    int result = _Server->on_accept(socket_fd, _Server->context);
     if (result != 0)
         close(socket_fd);
 
@@ -94,23 +94,23 @@ int TCPServer_Accept(TCPServer* _Server) {
 }
 
 // This function is called by the smw_work function.
-void TCPServer_TaskWork(void* _Context, uint64_t _MonTime) {
-    // The context is the TCPServer itself.
-    TCPServer* _Server = (TCPServer*)_Context;
+void tcp_server_work(void* _Context, uint64_t _MonTime) {
+    // The context is the tcp_server_t itself.
+    tcp_server_t* _Server = (tcp_server_t*)_Context;
 
     // Accept new connections.
-    TCPServer_Accept(_Server);
+    tcp_server_accept(_Server);
 }
 
-void TCPServer_Dispose(TCPServer* _Server) {
-    smw_destroyTask(_Server->task);
+void tcp_server_dispose(tcp_server_t* _Server) {
+    smw_destroy_task(_Server->task);
 }
 
-void TCPServer_DisposePtr(TCPServer** _ServerPtr) {
+void tcp_server_free(tcp_server_t** _ServerPtr) {
     if (_ServerPtr == NULL || *(_ServerPtr) == NULL)
         return;
 
-    TCPServer_Dispose(*(_ServerPtr));
+    tcp_server_dispose(*(_ServerPtr));
     free(*(_ServerPtr));
     *(_ServerPtr) = NULL;
 }

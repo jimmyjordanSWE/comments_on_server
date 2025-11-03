@@ -6,31 +6,31 @@
 #include "smw.h"
 
 // Callback function that is called when a new connection is accepted.
-// The context is the context that was passed to the HTTPServer_Initiate function.
+// The context is the context that was passed to the http_server_init function.
 // The connection is the new connection that was accepted.
-typedef int (*HTTPServer_OnConnection)(void* _Context, HTTPServerConnection* _Connection);
+typedef int (*http_server_on_connection_cb)(void* _Context, http_connection_t* _Connection);
 
-// The HTTPServer struct.
-// It contains the TCPServer, a callback for new connections, and a task for the smw worker.
+// The http_server_t struct.
+// It contains the tcp_server_t, a callback for new connections, and a task for the smw worker.
 typedef struct {
-    // The context that will be passed to the onConnection callback.
+    // The context that will be passed to the on_connection callback.
     void* context;
     // The callback that will be called when a new connection is accepted.
-    HTTPServer_OnConnection onConnection;
-    // The underlying TCPServer.
-    TCPServer tcpServer;
+    http_server_on_connection_cb on_connection;
+    // The underlying tcp_server_t.
+    tcp_server_t tcp_server;
     // The task that will be executed by the smw_work function.
-    smw_task* task;
-} HTTPServer;
+    smw_task_t* task;
+} http_server_t;
 
-// Initializes a HTTPServer.
-int HTTPServer_Initiate(HTTPServer* _Server, void* _Context, HTTPServer_OnConnection _OnConnection);
-// Initializes a HTTPServer and allocates memory for it.
-int HTTPServer_InitiatePtr(void* _Context, HTTPServer_OnConnection _OnConnection, HTTPServer** _ServerPtr);
+// Initializes a http_server_t.
+int http_server_init(http_server_t* _Server, void* _Context, http_server_on_connection_cb _OnConnection);
+// Initializes a http_server_t and allocates memory for it.
+int http_server_new(void* _Context, http_server_on_connection_cb _OnConnection, http_server_t** _ServerPtr);
 
-// Disposes a HTTPServer.
-void HTTPServer_Dispose(HTTPServer* _Server);
-// Disposes a HTTPServer and frees the allocated memory.
-void HTTPServer_DisposePtr(HTTPServer** _ServerPtr);
+// Disposes a http_server_t.
+void http_server_dispose(http_server_t* _Server);
+// Disposes a http_server_t and frees the allocated memory.
+void http_server_free(http_server_t** _ServerPtr);
 
 #endif //__HTTPServer_h_

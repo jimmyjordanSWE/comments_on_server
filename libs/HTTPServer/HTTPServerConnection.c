@@ -3,26 +3,26 @@
 #include <stdlib.h>
 
 //-----------------Internal Functions-----------------
-void HTTPServerConnection_TaskWork(void* _Context, uint64_t _MonTime);
+void http_connection_work(void* _Context, uint64_t _MonTime);
 //----------------------------------------------------
 
-int HTTPServerConnection_Initiate(HTTPServerConnection* _Connection, int _FD) {
-    // Initialize the TCPClient with the file descriptor of the connection.
-    TCPClient_Initiate(&_Connection->tcpClient, _FD);
+int http_connection_init(http_connection_t* _Connection, int _FD) {
+    // Initialize the tcp_client_t with the file descriptor of the connection.
+    tcp_client_init(&_Connection->tcp_client, _FD);
     // Create a task for the smw worker.
-    _Connection->task = smw_createTask(_Connection, HTTPServerConnection_TaskWork);
+    _Connection->task = smw_create_task(_Connection, http_connection_work);
     return 0;
 }
 
-int HTTPServerConnection_InitiatePtr(int _FD, HTTPServerConnection** _ConnectionPtr) {
+int http_connection_new(int _FD, http_connection_t** _ConnectionPtr) {
     if (_ConnectionPtr == NULL)
         return -1;
 
-    HTTPServerConnection* _Connection = (HTTPServerConnection*)malloc(sizeof(HTTPServerConnection));
+    http_connection_t* _Connection = (http_connection_t*)malloc(sizeof(http_connection_t));
     if (_Connection == NULL)
         return -2;
 
-    int result = HTTPServerConnection_Initiate(_Connection, _FD);
+    int result = http_connection_init(_Connection, _FD);
     if (result != 0) {
         free(_Connection);
         return result;
@@ -34,42 +34,42 @@ int HTTPServerConnection_InitiatePtr(int _FD, HTTPServerConnection** _Connection
 }
 
 // Sets the callback that will be called when a new request is received.
-void HTTPServerConnection_SetCallback(HTTPServerConnection* _Connection, void* _Context, HTTPServerConnection_OnRequest _OnRequest) {
+void http_connection_set_callback(http_connection_t* _Connection, void* _Context, http_connection_on_request_cb _OnRequest) {
     _Connection->context = _Context;
-    _Connection->onRequest = _OnRequest;
+    _Connection->on_request = _OnRequest;
 }
 
 // This function is called by the smw_work function.
-void HTTPServerConnection_TaskWork(void* _Context, uint64_t _MonTime) {
-    HTTPServerConnection* _Connection = (HTTPServerConnection*)_Context;
+void http_connection_work(void* _Context, uint64_t _MonTime) {
+    http_connection_t* _Connection = (http_connection_t*)_Context;
 
     // TODO: Implement HTTP parsing here.
-    // 1. Read data from the TCPClient into a buffer.
+    // 1. Read data from the tcp_client_t into a buffer.
     // 2. Parse the buffer as an HTTP request.
     // 3. If a full request is parsed:
-    //    a. Populate the method and url fields in the HTTPServerConnection struct.
-    //    b. Call the onRequest callback (WeatherServerInstance_OnRequest).
+    //    a. Populate the method and url fields in the http_connection_t struct.
+    //    b. Call the on_request callback (weather_instance_on_request).
     //    c. Remove the parsed request from the buffer.
     // 4. If the buffer doesn't contain a full request yet, do nothing and wait for more data to arrive.
 
-    printf("HTTPServerConnection_TaskWork\n");
+    printf("http_connection_work\n");
 
     // If there is a callback set, call it.
-    if (_Connection->onRequest) {
-        _Connection->onRequest(_Connection->context);
+    if (_Connection->on_request) {
+        _Connection->on_request(_Connection->context);
     }
 }
 
-void HTTPServerConnection_Dispose(HTTPServerConnection* _Connection) {
-    TCPClient_Dispose(&_Connection->tcpClient);
-    smw_destroyTask(_Connection->task);
+void http_connection_dispose(http_connection_t* _Connection) {
+    tcp_client_dispose(&_Connection->tcp_client);
+    smw_destroy_task(_Connection->task);
 }
 
-void HTTPServerConnection_DisposePtr(HTTPServerConnection** _ConnectionPtr) {
+void http_connection_free(http_connection_t** _ConnectionPtr) {
     if (_ConnectionPtr == NULL || *(_ConnectionPtr) == NULL)
         return;
 
-    HTTPServerConnection_Dispose(*(_ConnectionPtr));
+    http_connection_dispose(*(_ConnectionPtr));
     free(*(_ConnectionPtr));
     *(_ConnectionPtr) = NULL;
 }

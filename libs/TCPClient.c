@@ -1,13 +1,13 @@
 #include "TCPClient.h"
 
-// Initializes a TCPClient with an existing file descriptor.
-int TCPClient_Initiate(TCPClient* c, int fd) {
+// Initializes a tcp_client_t with an existing file descriptor.
+int tcp_client_init(tcp_client_t* c, int fd) {
     c->fd = fd;
     return 0;
 }
 
 // Connects to a server.
-int TCPClient_Connect(TCPClient* c, const char* host, const char* port) {
+int tcp_client_connect(tcp_client_t* c, const char* host, const char* port) {
     if (c->fd >= 0)
         return -1;
 
@@ -43,25 +43,25 @@ int TCPClient_Connect(TCPClient* c, const char* host, const char* port) {
 }
 
 // Writes data to the connection.
-int TCPClient_Write(TCPClient* c, const uint8_t* buf, int len) {
+int tcp_client_write(tcp_client_t* c, const uint8_t* buf, int len) {
     return send(c->fd, buf, len, MSG_NOSIGNAL);
 }
 
 // Reads data from the connection.
-int TCPClient_Read(TCPClient* c, uint8_t* buf, int len) {
+int tcp_client_read(tcp_client_t* c, uint8_t* buf, int len) {
     // MSG_DONTWAIT makes the read non-blocking.
     return recv(c->fd, buf, len, MSG_DONTWAIT);
 }
 
 // Disconnects from the server.
-void TCPClient_Disconnect(TCPClient* c) {
+void tcp_client_disconnect(tcp_client_t* c) {
     if (c->fd >= 0)
         close(c->fd);
 
     c->fd = -1;
 }
 
-// Disposes a TCPClient.
-void TCPClient_Dispose(TCPClient* c) {
-    TCPClient_Disconnect(c);
+// Disposes a tcp_client_t.
+void tcp_client_dispose(tcp_client_t* c) {
+    tcp_client_disconnect(c);
 }

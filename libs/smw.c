@@ -3,13 +3,13 @@
 #include <string.h>
 
 // The global smw instance.
-smw g_smw;
+smw_t g_smw;
 
 // Initializes the smw worker.
 int smw_init() {
     memset(&g_smw, 0, sizeof(g_smw));
     int i;
-    for (i = 0; i < smw_max_tasks; i++) {
+    for (i = 0; i < SMW_MAX_TASKS; i++) {
         g_smw.tasks[i].context = NULL;
         g_smw.tasks[i].callback = NULL;
     }
@@ -17,10 +17,10 @@ int smw_init() {
 }
 
 // Creates a new task.
-smw_task* smw_createTask(void* _Context, void (*_Callback)(void* _Context, uint64_t _MonTime)) {
+smw_task_t* smw_create_task(void* _Context, void (*_Callback)(void* _Context, uint64_t _MonTime)) {
     int i;
     // Find an empty slot in the task list.
-    for (i = 0; i < smw_max_tasks; i++) {
+    for (i = 0; i < SMW_MAX_TASKS; i++) {
         if (g_smw.tasks[i].context == NULL && g_smw.tasks[i].callback == NULL) {
             g_smw.tasks[i].context = _Context;
             g_smw.tasks[i].callback = _Callback;
@@ -33,11 +33,11 @@ smw_task* smw_createTask(void* _Context, void (*_Callback)(void* _Context, uint6
 }
 
 // Destroys a task.
-void smw_destroyTask(smw_task* _Task) {
+void smw_destroy_task(smw_task_t* _Task) {
     if (_Task == NULL)
         return;
     int i;
-    for (i = 0; i < smw_max_tasks; i++) {
+    for (i = 0; i < SMW_MAX_TASKS; i++) {
         if (&g_smw.tasks[i] == _Task) {
             g_smw.tasks[i].context = NULL;
             g_smw.tasks[i].callback = NULL;
@@ -50,7 +50,7 @@ void smw_destroyTask(smw_task* _Task) {
 void smw_work(uint64_t _MonTime) {
     printf("Working Tasks: ");
     int i;
-    for (i = 0; i < smw_max_tasks; i++) {
+    for (i = 0; i < SMW_MAX_TASKS; i++) {
         if (g_smw.tasks[i].callback != NULL) {
             printf("T:%d ", i);
             g_smw.tasks[i].callback(g_smw.tasks[i].context, _MonTime);
@@ -60,10 +60,10 @@ void smw_work(uint64_t _MonTime) {
 }
 
 // Returns the number of active tasks.
-int smw_getTaskCount() {
+int smw_get_task_count() {
     int counter = 0;
     int i;
-    for (i = 0; i < smw_max_tasks; i++) {
+    for (i = 0; i < SMW_MAX_TASKS; i++) {
         if (g_smw.tasks[i].callback != NULL)
             counter++;
     }
@@ -73,7 +73,7 @@ int smw_getTaskCount() {
 // Disposes the smw worker.
 void smw_dispose() {
     int i;
-    for (i = 0; i < smw_max_tasks; i++) {
+    for (i = 0; i < SMW_MAX_TASKS; i++) {
         g_smw.tasks[i].context = NULL;
         g_smw.tasks[i].callback = NULL;
     }

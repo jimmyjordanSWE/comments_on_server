@@ -3,18 +3,18 @@
 #include <stdlib.h>
 
 //-----------------Callback Functions-----------------
-// This function is called by the HTTPServer when a new connection is accepted.
-int WeatherServer_OnHTTPConnection(void* _Context, HTTPServerConnection* _Connection) {
-    printf("ENTRY WeatherServer_OnHTTPConnection callback ... ");
-    // The context is the WeatherServer itself.
-    WeatherServer* _Server = (WeatherServer*)_Context;
-    WeatherServerInstance* instance = NULL;
+// This function is called by the http_server_t when a new connection is accepted.
+int weather_server_on_http_connection(void* _Context, http_connection_t* _Connection) {
+    printf("ENTRY weather_server_on_http_connection callback ... ");
+    // The context is the weather_server_t itself.
+    weather_server_t* _Server = (weather_server_t*)_Context;
+    weather_instance_t* instance = NULL;
 
-    // TODO: Pass the Database object to the WeatherServerInstance here.
-    // Create a new WeatherServerInstance to handle the connection.
-    int result = WeatherServerInstance_InitiatePtr(_Connection, &instance);
+    // TODO: Pass the Database object to the weather_instance_t here.
+    // Create a new weather_instance_t to handle the connection.
+    int result = weather_instance_new(_Connection, &instance);
     if (result != 0) {
-        printf("WeatherServer_OnHTTPConnection: Failed to initiate instance\n");
+        printf("weather_server_on_http_connection: Failed to initiate instance\n");
         return -1;
     }
 
@@ -27,35 +27,35 @@ int WeatherServer_OnHTTPConnection(void* _Context, HTTPServerConnection* _Connec
 //----------------------------------------------------
 
 //-----------------Internal Functions-----------------
-void WeatherServer_TaskWork(void* _Context, uint64_t _MonTime);
-int WeatherServer_OnHTTPConnection(void* _Context, HTTPServerConnection* _Connection);
+void weather_server_work(void* _Context, uint64_t _MonTime);
+int weather_server_on_http_connection(void* _Context, http_connection_t* _Connection);
 //----------------------------------------------------
 
-int WeatherServer_Initiate(WeatherServer* _Server) {
+int weather_server_init(weather_server_t* _Server) {
     printf("ENTRY: Creating server ... ");
     // TODO: Initialize the Database object here.
 
-    // Initialize the HTTPServer and set the callback for new connections.
-    // The WeatherServer itself is passed as the context.
-    HTTPServer_Initiate(&_Server->httpServer, _Server, WeatherServer_OnHTTPConnection);
-    // Create a linked list to store the WeatherServerInstances.
+    // Initialize the http_server_t and set the callback for new connections.
+    // The weather_server_t itself is passed as the context.
+    http_server_init(&_Server->http_server, _Server, weather_server_on_http_connection);
+    // Create a linked list to store the weather_instance_t.
     _Server->instances = LinkedList_create();
     // Create a task for the smw worker.
-    // The WeatherServer itself is passed as the context.
-    _Server->task = smw_createTask(_Server, WeatherServer_TaskWork);
+    // The weather_server_t itself is passed as the context.
+    _Server->task = smw_create_task(_Server, weather_server_work);
     printf("EXIT: Creating server.");
     return 0;
 }
 
-int WeatherServer_InitiatePtr(WeatherServer** _ServerPtr) {
+int weather_server_new(weather_server_t** _ServerPtr) {
     if (_ServerPtr == NULL)
         return -1;
 
-    WeatherServer* _Server = (WeatherServer*)malloc(sizeof(WeatherServer));
+    weather_server_t* _Server = (weather_server_t*)malloc(sizeof(weather_server_t));
     if (_Server == NULL)
         return -2;
 
-    int result = WeatherServer_Initiate(_Server);
+    int result = weather_server_init(_Server);
     if (result != 0) {
         free(_Server);
         return result;
@@ -67,28 +67,28 @@ int WeatherServer_InitiatePtr(WeatherServer** _ServerPtr) {
 }
 
 // This function is called by the smw_work function.
-void WeatherServer_TaskWork(void* _Context, uint64_t _MonTime) {
-    // The context is the WeatherServer itself.
-    WeatherServer* _Server = (WeatherServer*)_Context;
+void weather_server_work(void* _Context, uint64_t _MonTime) {
+    // The context is the weather_server_t itself.
+    weather_server_t* _Server = (weather_server_t*)_Context;
 
-    // Iterate over all WeatherServerInstances and call their Work function.
+    // Iterate over all weather_instance_t and call their Work function.
     LinkedList_foreach(_Server->instances, node) {
-        WeatherServerInstance* instance = (WeatherServerInstance*)node->item;
-        WeatherServerInstance_Work(instance, _MonTime);
+        weather_instance_t* instance = (weather_instance_t*)node->item;
+        weather_instance_work(instance, _MonTime);
     }
 }
 
-void WeatherServer_Dispose(WeatherServer* _Server) {
+void weather_server_dispose(weather_server_t* _Server) {
     // TODO: Dispose of the Database object here.
-    HTTPServer_Dispose(&_Server->httpServer);
-    smw_destroyTask(_Server->task);
+    http_server_dispose(&_Server->http_server);
+    smw_destroy_task(_Server->task);
 }
 
-void WeatherServer_DisposePtr(WeatherServer** _ServerPtr) {
+void weather_server_free(weather_server_t** _ServerPtr) {
     if (_ServerPtr == NULL || *(_ServerPtr) == NULL)
         return;
 
-    WeatherServer_Dispose(*(_ServerPtr));
+    weather_server_dispose(*(_ServerPtr));
     free(*(_ServerPtr));
     *(_ServerPtr) = NULL;
 }

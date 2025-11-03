@@ -6,27 +6,27 @@
 #include "linked_list.h"
 #include "smw.h"
 
-// The main WeatherServer struct.
-// It contains the HTTPServer, a list of WeatherServerInstances, and a task for the smw worker.
+// The main weather_server_t struct.
+// It contains the http_server_t, a list of weather_instance_t, and a task for the smw worker.
 typedef struct {
-    // The underlying HTTPServer.
-    HTTPServer httpServer;
-    // A list of all active WeatherServerInstances.
+    // The underlying http_server_t.
+    http_server_t http_server;
+    // A list of all active weather_instance_t.
     LinkedList* instances;
     // The task that will be executed by the smw_work function.
-    smw_task* task;
+    smw_task_t* task;
 
     // TODO: Add a Database object here.
-} WeatherServer;
+} weather_server_t;
 
-// Initializes a WeatherServer.
-int WeatherServer_Initiate(WeatherServer* _Server);
-// Initializes a WeatherServer and allocates memory for it.
-int WeatherServer_InitiatePtr(WeatherServer** _ServerPtr);
+// Initializes a weather_server_t.
+int weather_server_init(weather_server_t* _Server);
+// Initializes a weather_server_t and allocates memory for it.
+int weather_server_new(weather_server_t** _ServerPtr);
 
-// Disposes a WeatherServer.
-void WeatherServer_Dispose(WeatherServer* _Server);
-// Disposes a WeatherServer and frees the allocated memory.
-void WeatherServer_DisposePtr(WeatherServer** _ServerPtr);
+// Disposes a weather_server_t.
+void weather_server_dispose(weather_server_t* _Server);
+// Disposes a weather_server_t and frees the allocated memory.
+void weather_server_free(weather_server_t** _ServerPtr);
 
 #endif //__WeatherServer_h_
